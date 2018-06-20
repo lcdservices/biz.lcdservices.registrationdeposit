@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <extension key="biz.lcdservices.registrationdeposit" type="module">
   <file>registrationdeposit</file>
-  <name>Event Maximum Desposit</name>
+  <name>Event Minimum Desposit</name>
   <description>Allows you to set the visibility of an option value to public or admin.</description>
   <license>AGPL-3.0</license>
   <maintainer>
