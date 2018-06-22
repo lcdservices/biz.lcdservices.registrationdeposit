@@ -130,6 +130,72 @@ function registrationdeposit_civicrm_buildForm($formName, &$form) {
       'template' => "CRM/LCD/depositoption.tpl"
     ));
   }
+  if( $formName == 'CRM_Event_Form_Registration_Register' && ($form->getAction() == CRM_Core_Action::ADD || $form->getAction() == CRM_Core_Action::UPDATE || $form->getAction() == CRM_Core_Action::PREVIEW )) {
+    $formvalues = $form->getVar('_values');
+    $priceData = $formvalues['fee'];
+    $minDepositData = array();
+    foreach($priceData as $key=>$priceSets){
+      foreach($priceSets['options'] as $priceID=>$priceValue){
+        $minDepositData[$priceID] = $priceValue['min_deposit'];
+      }
+    }
+    $form->assign('minDepositData', $minDepositData);
+    $form->add('text', 'min_amount', ts('Amount deposited'));
+    $form->addElement('hidden', 'min_deposit_amount',   '' );
+    $form->addElement('hidden', 'TotalAmount',   '' );
+    CRM_Core_Region::instance('page-body')->add(array(
+      'template' => "CRM/LCD/registerdeposit.tpl"
+    ));
+  }
+}
+
+/**
+ * Implements hook_civicrm_validateForm().
+ *
+ * @param string $formName
+ * @param array $fields
+ * @param array $files
+ * @param CRM_Core_Form $form
+ * @param array $errors
+ */
+function registrationdeposit_civicrm_validateForm($formName, &$fields, &$files, &$form, &$errors) {
+  // Form validation for Price Form Field
+  if ($formName == 'CRM_Price_Form_Field' && $form->getAction() == CRM_Core_Action::ADD) {
+    $numoption = CRM_Price_Form_Field::NUM_OPTION;
+      
+    for ($i = 1; $i <= $numoption; $i++) { 
+      $min_deposit = CRM_Utils_Array::value($i, $fields['min_deposit']);
+      $option_amount = CRM_Utils_Array::value($i, $fields['option_amount']);
+      $min_depositID = "option_amount[$i]";
+      if($min_deposit > $option_amount){
+        $error_message= ts("Cannot create price option because minimum deposit is greater than amount.", array('1' => $min_depositID));
+        $form->setElementError($min_depositID, $error_message);
+      }
+    }        
+  }
+
+  // Form validation for Price fields for a option Data Set
+  if($formName == 'CRM_Price_Form_Option' && ($form->getAction() == CRM_Core_Action::ADD || $form->getAction() == CRM_Core_Action::UPDATE)) {
+    $option_amount = CRM_Utils_Array::value('amount', $fields);
+    $min_deposit = CRM_Utils_Array::value('min_deposit', $fields);
+    
+    if($min_deposit > $option_amount){
+      $error_message= ts("Cannot create price option because minimum deposit is greater than amount.", array('1' => $option_amount));
+      $form->setElementError('amount', $error_message);
+    }
+  }
+  
+  // Form validation for Registration fields for price option
+  if($formName == 'CRM_Event_Form_Registration_Register' && ($form->getAction() == CRM_Core_Action::ADD || $form->getAction() == CRM_Core_Action::UPDATE || $form->getAction() == CRM_Core_Action::PREVIEW )) {
+    $amount_entered = CRM_Utils_Array::value('min_amount', $fields);
+    $minimum_amount = CRM_Utils_Array::value('min_deposit_amount', $fields);
+    
+    if($minimum_amount > $amount_entered){
+      $error_message= ts("Cannot process because the Amount deposited should be greater than or equal to %1", array('1' => $minimum_amount));
+      $form->setElementError('min_amount', $error_message);
+    }
+  }
+  return;
 }
 
 /**
