@@ -130,7 +130,7 @@ function registrationdeposit_civicrm_buildForm($formName, &$form) {
       'template' => "CRM/LCD/depositoption.tpl"
     ));
   }
-  if( $formName == 'CRM_Event_Form_Registration_Register' && ($form->getAction() == CRM_Core_Action::ADD || $form->getAction() == CRM_Core_Action::UPDATE || $form->getAction() == CRM_Core_Action::PREVIEW )) {
+  if( $formName == 'CRM_Event_Form_Registration_Register') {
     $formvalues = $form->getVar('_values');
     $priceData = $formvalues['fee'];
     $minDepositData = array();
@@ -146,7 +146,7 @@ function registrationdeposit_civicrm_buildForm($formName, &$form) {
     CRM_Core_Region::instance('page-body')->add(array(
       'template' => "CRM/LCD/registerdeposit.tpl"
     ));
-  }
+  }  
 }
 
 /**
@@ -186,12 +186,14 @@ function registrationdeposit_civicrm_validateForm($formName, &$fields, &$files, 
   }
   
   // Form validation for Registration fields for price option
-  if($formName == 'CRM_Event_Form_Registration_Register' && ($form->getAction() == CRM_Core_Action::ADD || $form->getAction() == CRM_Core_Action::UPDATE || $form->getAction() == CRM_Core_Action::PREVIEW )) {
+  if($formName == 'CRM_Event_Form_Registration_Register') {
     $amount_entered = CRM_Utils_Array::value('min_amount', $fields);
     $minimum_amount = CRM_Utils_Array::value('min_deposit_amount', $fields);
+    $config = CRM_Core_Config::singleton();
+    $currencySymbol = CRM_Core_DAO::getFieldValue('CRM_Financial_DAO_Currency', $config->defaultCurrency, 'symbol', 'name');
     
     if($minimum_amount > $amount_entered){
-      $error_message= ts("Cannot process because the Amount deposited should be greater than or equal to %1", array('1' => $minimum_amount));
+      $error_message= ts("The deposit amount must be equal to or more than the total minimum deposit of %1 %2 for your selections.", array('1' => $currencySymbol, '2' => $minimum_amount));
       $form->setElementError('min_amount', $error_message);
     }
   }
@@ -231,4 +233,13 @@ function registrationdeposit_civicrm_postProcess($formName, &$form) {
       }
     }          
   }
+}
+
+/**
+ * Implementation of hook_civicrm_alterMenu
+ */
+function registrationdeposit_civicrm_alterMenu(&$items) {
+  $items['civicrm/event/register'] = array(
+    'page_callback' => 'CRM_registrationdeposit_Event_Controller_Registration',
+  );
 }

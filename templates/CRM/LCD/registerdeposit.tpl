@@ -70,7 +70,7 @@ cj("#priceset [price]").each(function () {
     cj(this).change( function() {
       calculateSelectLineItemValue(this);
       var total = calculateTotalAmount();
-          cj('input[name = "TotalAmount"]').val( total );
+      cj('input[name = "TotalAmount"]').val( total );
       displayMin(calculateMinTotalFee());
     });
 
