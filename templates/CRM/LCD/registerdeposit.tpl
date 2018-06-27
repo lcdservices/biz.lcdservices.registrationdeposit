@@ -1,5 +1,5 @@
 {* FILE: templates/CRM/LCD/registerdeposit.tpl to add custom field for custom data set*}
-<div id="min_amount_value">
+<div id="min_amount_value" class="crm-section">
   <div class="label" id="minpricelabel">{$form.min_amount.label}</div>
   <div class="content calc-value" id="minpricevalue">{$form.min_amount.html}</div>
 </div>
@@ -8,7 +8,7 @@
   
 
 <script type="text/javascript">
-  cj('#min_amount_value').insertAfter('div#pricesetTotal');
+  cj('#min_amount_value').insertAfter('div.billing_last_name-section');
   
 </script>
 
@@ -21,10 +21,21 @@
 var minimum_deposit = '{/literal}{$item}{literal}';
 var prcieID = '{/literal}{$key}{literal}';
   cj("#priceset [price]").each(function () {
-    var optionID = cj(this).attr('value');
-    if(optionID == prcieID){
-      cj(this).attr('minimum_deposit', minimum_deposit);
-    } 
+    var elementType =  cj(this).attr('type');
+    if( this.tagName == 'SELECT' ){
+      cj("#priceset select option").each(function(){
+        var optionID =  cj(this).attr('value');
+        if(optionID == prcieID){
+          cj(this).attr('minimum_deposit', minimum_deposit);
+        }
+      });
+    }
+    else{
+      var optionID = cj(this).attr('value');
+      if(optionID == prcieID){
+        cj(this).attr('minimum_deposit', minimum_deposit);
+      }
+    }
   });
  {/literal} 
 {/foreach}
@@ -124,7 +135,7 @@ function calculateRadioLineItemMinValue(priceElement) {
  * Calculate the value of the line item for a select value.
  */
 function calculateSelectLineItemValue(priceElement) {
- var minimum_deposit = cj(priceElement).attr('minimum_deposit');
+  var minimum_deposit = cj('option:selected', priceElement).attr('minimum_deposit');
   var price = parseFloat('0');
   var option = cj(priceElement).val();
   if (option) {

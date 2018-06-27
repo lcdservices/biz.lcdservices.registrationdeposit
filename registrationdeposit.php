@@ -140,7 +140,7 @@ function registrationdeposit_civicrm_buildForm($formName, &$form) {
       }
     }
     $form->assign('minDepositData', $minDepositData);
-    $form->add('text', 'min_amount', ts('Amount deposited'));
+    $form->add('text', 'min_amount', ts('Deposit Amount'));
     $form->addElement('hidden', 'min_deposit_amount',   '' );
     $form->addElement('hidden', 'TotalAmount',   '' );
     CRM_Core_Region::instance('page-body')->add(array(
@@ -187,12 +187,13 @@ function registrationdeposit_civicrm_validateForm($formName, &$fields, &$files, 
   
   // Form validation for Registration fields for price option
   if($formName == 'CRM_Event_Form_Registration_Register') {
+    $payment_processor_id = CRM_Utils_Array::value('payment_processor_id', $fields);
     $amount_entered = CRM_Utils_Array::value('min_amount', $fields);
     $minimum_amount = CRM_Utils_Array::value('min_deposit_amount', $fields);
     $config = CRM_Core_Config::singleton();
     $currencySymbol = CRM_Core_DAO::getFieldValue('CRM_Financial_DAO_Currency', $config->defaultCurrency, 'symbol', 'name');
     
-    if($minimum_amount > $amount_entered){
+    if($minimum_amount > $amount_entered && $payment_processor_id !=0 ){
       $error_message= ts("The deposit amount must be equal to or more than the total minimum deposit of %1 %2 for your selections.", array('1' => $currencySymbol, '2' => $minimum_amount));
       $form->setElementError('min_amount', $error_message);
     }
