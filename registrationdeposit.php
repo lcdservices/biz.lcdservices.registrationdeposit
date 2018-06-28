@@ -146,6 +146,22 @@ function registrationdeposit_civicrm_buildForm($formName, &$form) {
     CRM_Core_Region::instance('page-body')->add(array(
       'template' => "CRM/LCD/registerdeposit.tpl"
     ));
+  }
+  if( $formName == 'CRM_registrationdeposit_Event_Form_Registration_Confirm') {
+    $params = $form->getVar('_params');
+    $min_amount = 0;
+    foreach($params as $key=>$value){
+      if(isset($value['min_amount'])){
+        $min_amount = CRM_Utils_Array::value('min_amount', $value);
+      }
+    }
+    if($min_amount > 0){
+      $form->assign('min_amount', $min_amount);
+      CRM_Core_Region::instance('page-body')->add(array(
+        'template' => "CRM/LCD/confirm.tpl"
+      ));
+    }
+    
   }  
 }
 
