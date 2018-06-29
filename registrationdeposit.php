@@ -145,8 +145,8 @@ function registrationdeposit_civicrm_buildForm($formName, &$form) {
     }
     $form->assign('minDepositData', $minDepositData);
     $form->add('text', 'min_amount', ts('Deposit Amount'));
-    $form->addElement('hidden', 'min_deposit_amount', '' );
-    $form->addElement('hidden', 'TotalAmount', '' );
+    $form->addElement('hidden', 'min_deposit_amount', '');
+    $form->addElement('hidden', 'TotalAmount', '');
     CRM_Core_Region::instance('page-body')->add(array(
       'template' => "CRM/LCD/registerdeposit.tpl"
     ));
@@ -184,6 +184,8 @@ function registrationdeposit_civicrm_buildForm($formName, &$form) {
  * @param array $errors
  */
 function registrationdeposit_civicrm_validateForm($formName, &$fields, &$files, &$form, &$errors) {
+  //Civi::log()->debug('registrationdeposit_civicrm_validateForm', array('fields' => $fields));
+
   // Form validation for Price Form Field
   if ($formName == 'CRM_Price_Form_Field' && $form->getAction() == CRM_Core_Action::ADD) {
     $numoption = CRM_Price_Form_Field::NUM_OPTION;
@@ -224,7 +226,7 @@ function registrationdeposit_civicrm_validateForm($formName, &$fields, &$files, 
     $config = CRM_Core_Config::singleton();
     $currencySymbol = CRM_Core_DAO::getFieldValue('CRM_Financial_DAO_Currency', $config->defaultCurrency, 'symbol', 'name');
     
-    if($minimum_amount > $amount_entered && $payment_processor_id !=0 ){
+    if ($minimum_amount > $amount_entered && $payment_processor_id !=0) {
       $error_message= ts("The deposit amount must be equal to or more than the total minimum deposit of %1 %2 for your selections.", array('1' => $currencySymbol, '2' => $minimum_amount));
       $form->setElementError('min_amount', $error_message);
     }
