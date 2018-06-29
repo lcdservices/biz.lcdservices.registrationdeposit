@@ -33,7 +33,7 @@
 /**
  * This class generates form components for processing Event.
  */
-class CRM_registrationdeposit_Event_Form_Registration_Confirm extends CRM_Event_Form_Registration {
+class CRM_Event_Form_Registration_Confirm extends CRM_Event_Form_Registration {
 
   /**
    * The values for the contribution db object.
@@ -973,6 +973,8 @@ class CRM_registrationdeposit_Event_Form_Registration_Confirm extends CRM_Event_
     }
 
     // CRM-20264: fetch CC type ID and number (last 4 digit) and assign it back to $params
+    CRM_Contribute_Form_AbstractEditPayment::formatCreditCardDetails($params);
+
     $contribParams = array(
       'contact_id' => $contactID,
       'financial_type_id' => !empty($form->_values['event']['financial_type_id']) ? $form->_values['event']['financial_type_id'] : $params['financial_type_id'],
@@ -988,7 +990,9 @@ class CRM_registrationdeposit_Event_Form_Registration_Confirm extends CRM_Event_
       'card_type_id' => CRM_Utils_Array::value('card_type_id', $params),
       'pan_truncation' => CRM_Utils_Array::value('pan_truncation', $params),
     );
-    if(isset($params['min_amount']) && !empty($params['min_amount']) && $params['min_amount'] > 0 && $params['amount'] > $params['min_amount']){
+
+    //LCD - hopefully in future core
+    if(!empty($params['min_amount']) && $params['min_amount'] > 0 && $params['amount'] > $params['min_amount']){
       $contribParams['partial_payment_total'] = $params['amount'];
       $contribParams['partial_amount_to_pay'] = $params['min_amount'];
     }

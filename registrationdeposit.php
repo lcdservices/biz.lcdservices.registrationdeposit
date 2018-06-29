@@ -270,12 +270,3 @@ function registrationdeposit_civicrm_postProcess($formName, &$form) {
     }          
   }
 }
-
-/**
- * Implementation of hook_civicrm_alterMenu
- */
-function registrationdeposit_civicrm_alterMenu(&$items) {
-  $items['civicrm/event/register'] = array(
-    'page_callback' => 'CRM_registrationdeposit_Event_Controller_Registration',
-  );
-}
