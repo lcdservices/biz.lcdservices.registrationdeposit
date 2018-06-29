@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <extension key="biz.lcdservices.registrationdeposit" type="module">
   <file>registrationdeposit</file>
-  <name>Event Minimum Desposit</name>
-  <description>Allows you to set the visibility of an option value to public or admin.</description>
+  <name>Event Minimum Deposit</name>
+  <description>Set a minimum deposit amount for price field options and expose a deposit amount field in the event registration form.</description>
   <license>AGPL-3.0</license>
   <maintainer>
     <author>Lighthouse Consulting and Design</author>
@@ -16,9 +16,9 @@
   </urls>
   <releaseDate>2018-04-07</releaseDate>
   <version>1.0</version>
-  <develStage>beta</develStage>
+  <develStage>stable</develStage>
   <compatibility>
-    <ver>4.7</ver>
+    <ver>5.2</ver>
   </compatibility>
   <comments></comments>
   <civix>

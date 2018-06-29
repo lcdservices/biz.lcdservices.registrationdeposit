@@ -16,9 +16,9 @@ function _registrationdeposit_civix_civicrm_config(&$config = NULL) {
   $extDir = $extRoot . 'templates';
 
   if ( is_array( $template->template_dir ) ) {
-      array_unshift( $template->template_dir, $extDir );
+    array_unshift( $template->template_dir, $extDir );
   } else {
-      $template->template_dir = array( $extDir, $template->template_dir );
+    $template->template_dir = array( $extDir, $template->template_dir );
   }
 
   $include_path = $extRoot . PATH_SEPARATOR . get_include_path( );

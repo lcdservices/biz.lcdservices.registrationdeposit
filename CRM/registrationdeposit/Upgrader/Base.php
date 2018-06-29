@@ -41,7 +41,7 @@ class CRM_registrationdeposit_Upgrader_Base {
   static public function instance() {
     if (!self::$instance) {
       // FIXME auto-generate.
-      self::$instance = new CRM_optionvaluevisibility_Upgrader(
+      self::$instance = new CRM_registrationdeposit_Upgrader(
         'biz.lcdservices.registrationdeposit',
         realpath(__DIR__ . '/../../../')
       );

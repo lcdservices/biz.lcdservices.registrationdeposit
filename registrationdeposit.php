@@ -110,27 +110,31 @@ function registrationdeposit_civicrm_entityTypes(&$entityTypes) {
  * @param CRM_Core_Form $form
  */
 function registrationdeposit_civicrm_buildForm($formName, &$form) {
-  if( $formName == 'CRM_Price_Form_Field' && ($form->getAction() == CRM_Core_Action::ADD || $form->getAction() == CRM_Core_Action::UPDATE) ) {
+  if ($formName == 'CRM_Price_Form_Field' &&
+    ($form->getAction() == CRM_Core_Action::ADD || $form->getAction() == CRM_Core_Action::UPDATE)
+  ) {
     $numoption = CRM_Price_Form_Field::NUM_OPTION;
     for ($i = 1; $i <= $numoption; $i++) {     
       $form->add('text', "min_deposit[$i]", ts('Minimum deposit'));
     }
+
     if($form->getAction() == CRM_Core_Action::ADD){
       CRM_Core_Region::instance('page-body')->add(array(
         'template' => "CRM/LCD/depositoptionvalue.tpl"
       )); 
     }
-      
   }
-  if( $formName == 'CRM_Price_Form_Option' && ($form->getAction() == CRM_Core_Action::ADD || $form->getAction() == CRM_Core_Action::UPDATE)) {
+
+  if ($formName == 'CRM_Price_Form_Option' &&
+    ($form->getAction() == CRM_Core_Action::ADD || $form->getAction() == CRM_Core_Action::UPDATE)
+  ) {
     $form->add('text', 'min_deposit', ts('Minimum deposit'));
-    if($form->getAction() == CRM_Core_Action::ADD){
-    }
     CRM_Core_Region::instance('page-body')->add(array(
       'template' => "CRM/LCD/depositoption.tpl"
     ));
   }
-  if( $formName == 'CRM_Event_Form_Registration_Register') {
+
+  if ($formName == 'CRM_Event_Form_Registration_Register') {
     $formvalues = $form->getVar('_values');
     $priceData = $formvalues['fee'];
     $minDepositData = array();
@@ -141,20 +145,25 @@ function registrationdeposit_civicrm_buildForm($formName, &$form) {
     }
     $form->assign('minDepositData', $minDepositData);
     $form->add('text', 'min_amount', ts('Deposit Amount'));
-    $form->addElement('hidden', 'min_deposit_amount',   '' );
-    $form->addElement('hidden', 'TotalAmount',   '' );
+    $form->addElement('hidden', 'min_deposit_amount', '' );
+    $form->addElement('hidden', 'TotalAmount', '' );
     CRM_Core_Region::instance('page-body')->add(array(
       'template' => "CRM/LCD/registerdeposit.tpl"
     ));
   }
-  if( $formName == 'CRM_registrationdeposit_Event_Form_Registration_Confirm' || $formName == 'CRM_Event_Form_Registration_ThankYou') {
+
+  if ($formName == 'CRM_registrationdeposit_Event_Form_Registration_Confirm' ||
+    $formName == 'CRM_Event_Form_Registration_ThankYou'
+  ) {
     $params = $form->getVar('_params');
     $min_amount = 0;
+    
     foreach($params as $key=>$value){
       if(isset($value['min_amount'])){
         $min_amount = CRM_Utils_Array::value('min_amount', $value);
       }
     }
+
     if($min_amount > 0){
       $amountformat = CRM_Utils_Money::format($min_amount);
       $form->assign('min_amount', $amountformat);
@@ -162,7 +171,6 @@ function registrationdeposit_civicrm_buildForm($formName, &$form) {
         'template' => "CRM/LCD/confirm.tpl"
       ));
     }
-    
   }
 }
 
@@ -185,25 +193,31 @@ function registrationdeposit_civicrm_validateForm($formName, &$fields, &$files, 
       $option_amount = CRM_Utils_Array::value($i, $fields['option_amount']);
       $min_depositID = "option_amount[$i]";
       if($min_deposit > $option_amount){
-        $error_message= ts("Cannot create price option because minimum deposit is greater than amount.", array('1' => $min_depositID));
+        $error_message= ts("Cannot create price option because minimum deposit is greater than amount.", array(
+          '1' => $min_depositID,
+        ));
         $form->setElementError($min_depositID, $error_message);
       }
     }        
   }
 
   // Form validation for Price fields for a option Data Set
-  if($formName == 'CRM_Price_Form_Option' && ($form->getAction() == CRM_Core_Action::ADD || $form->getAction() == CRM_Core_Action::UPDATE)) {
+  if ($formName == 'CRM_Price_Form_Option' &&
+    ($form->getAction() == CRM_Core_Action::ADD || $form->getAction() == CRM_Core_Action::UPDATE)
+  ) {
     $option_amount = CRM_Utils_Array::value('amount', $fields);
     $min_deposit = CRM_Utils_Array::value('min_deposit', $fields);
     
     if($min_deposit > $option_amount){
-      $error_message= ts("Cannot create price option because minimum deposit is greater than amount.", array('1' => $option_amount));
+      $error_message= ts("Cannot create price option because minimum deposit is greater than amount.", array(
+        '1' => $option_amount,
+      ));
       $form->setElementError('amount', $error_message);
     }
   }
   
   // Form validation for Registration fields for price option
-  if($formName == 'CRM_Event_Form_Registration_Register') {
+  if ($formName == 'CRM_Event_Form_Registration_Register') {
     $payment_processor_id = CRM_Utils_Array::value('payment_processor_id', $fields);
     $amount_entered = CRM_Utils_Array::value('min_amount', $fields);
     $minimum_amount = CRM_Utils_Array::value('min_deposit_amount', $fields);
@@ -225,7 +239,9 @@ function registrationdeposit_civicrm_validateForm($formName, &$fields, &$files, 
  * @param CRM_Core_Form $form
  */
 function registrationdeposit_civicrm_postProcess($formName, &$form) {
-  if( $formName == 'CRM_Price_Form_Field' && ($form->getAction() == CRM_Core_Action::ADD || $form->getAction() == CRM_Core_Action::UPDATE)) {
+  if ($formName == 'CRM_Price_Form_Field' &&
+    ($form->getAction() == CRM_Core_Action::ADD || $form->getAction() == CRM_Core_Action::UPDATE)
+  ) {
     $params = $form->getVar('_submitValues');    
     $id = $form->getVar('_sid');
     $field_params = array(
@@ -235,10 +251,12 @@ function registrationdeposit_civicrm_postProcess($formName, &$form) {
     foreach($custom_field['values'] as $key=>$value){
       $priceFieldID = $key;
     }
+
     $fieldOptions = civicrm_api3('price_field_value', 'get', array(
       'price_field_id' => $priceFieldID,
       'sequential' => 1,
     ));
+
     if(isset($fieldOptions['values']) ){
       foreach ($fieldOptions['values'] as $key => $value) {
         $option_label = $value['label'];
