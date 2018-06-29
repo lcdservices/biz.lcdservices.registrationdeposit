@@ -147,7 +147,7 @@ function registrationdeposit_civicrm_buildForm($formName, &$form) {
       'template' => "CRM/LCD/registerdeposit.tpl"
     ));
   }
-  if( $formName == 'CRM_registrationdeposit_Event_Form_Registration_Confirm') {
+  if( $formName == 'CRM_registrationdeposit_Event_Form_Registration_Confirm' || $formName == 'CRM_Event_Form_Registration_ThankYou') {
     $params = $form->getVar('_params');
     $min_amount = 0;
     foreach($params as $key=>$value){
@@ -156,13 +156,14 @@ function registrationdeposit_civicrm_buildForm($formName, &$form) {
       }
     }
     if($min_amount > 0){
-      $form->assign('min_amount', $min_amount);
+      $amountformat = CRM_Utils_Money::format($min_amount);
+      $form->assign('min_amount', $amountformat);
       CRM_Core_Region::instance('page-body')->add(array(
         'template' => "CRM/LCD/confirm.tpl"
       ));
     }
     
-  }  
+  }
 }
 
 /**
