@@ -142,7 +142,7 @@ function registrationdeposit_civicrm_buildForm($formName, &$form) {
     ));
   }
 
-  if ($formName == 'CRM_registrationdeposit_Event_Form_Registration_Confirm' ||
+  if ($formName == 'CRM_Event_Form_Registration_Confirm' ||
     $formName == 'CRM_Event_Form_Registration_ThankYou'
   ) {
     $params = $form->getVar('_params');
