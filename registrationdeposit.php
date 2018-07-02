@@ -135,18 +135,8 @@ function registrationdeposit_civicrm_buildForm($formName, &$form) {
   }
 
   if ($formName == 'CRM_Event_Form_Registration_Register') {
-    $formvalues = $form->getVar('_values');
-    $priceData = $formvalues['fee'];
-    $minDepositData = array();
-    foreach($priceData as $key=>$priceSets){
-      foreach($priceSets['options'] as $priceID=>$priceValue){
-        $minDepositData[$priceID] = $priceValue['min_deposit'];
-      }
-    }
-    $form->assign('minDepositData', $minDepositData);
+    
     $form->add('text', 'min_amount', ts('Deposit Amount'));
-    $form->addElement('hidden', 'min_deposit_amount', '');
-    $form->addElement('hidden', 'TotalAmount', '');
     CRM_Core_Region::instance('page-body')->add(array(
       'template' => "CRM/LCD/registerdeposit.tpl"
     ));
@@ -220,14 +210,38 @@ function registrationdeposit_civicrm_validateForm($formName, &$fields, &$files, 
   
   // Form validation for Registration fields for price option
   if ($formName == 'CRM_Event_Form_Registration_Register') {
+    $min_total_amount = 0;
+    $field_params = array(
+      'price_set_id' => CRM_Utils_Array::value('priceSetId', $fields),
+    );
+    $custom_field = civicrm_api3('PriceField', 'get', $field_params);
+    $priceFieldID = '';
+    $priceoptionID = '';
+    foreach($custom_field['values'] as $key=>$value){
+      $priceFieldID = 'price_'.$key;
+      if( isset( $fields[$priceFieldID] ) ){
+        $priceoptionID = CRM_Utils_Array::value($priceFieldID, $fields);
+        $fieldOptions = civicrm_api3('price_field_value', 'get', array(
+          'id' => $priceoptionID,
+          'price_field_id' => $key,
+          'sequential' => 1,
+        ));
+        if( isset($fieldOptions['values'][0]) ){
+          $priceOptionSet = $fieldOptions['values'][0];
+          $min_deposit_amount = CRM_Utils_Array::value('min_deposit', $priceOptionSet);
+          if( is_numeric($min_deposit_amount) ){
+            $min_total_amount += $min_deposit_amount;
+          }
+        }
+      }
+    }
     $payment_processor_id = CRM_Utils_Array::value('payment_processor_id', $fields);
     $amount_entered = CRM_Utils_Array::value('min_amount', $fields);
-    $minimum_amount = CRM_Utils_Array::value('min_deposit_amount', $fields);
     $config = CRM_Core_Config::singleton();
     $currencySymbol = CRM_Core_DAO::getFieldValue('CRM_Financial_DAO_Currency', $config->defaultCurrency, 'symbol', 'name');
     
-    if ($minimum_amount > $amount_entered && $payment_processor_id !=0) {
-      $error_message= ts("The deposit amount must be equal to or more than the total minimum deposit of %1 %2 for your selections.", array('1' => $currencySymbol, '2' => $minimum_amount));
+    if ($min_total_amount > $amount_entered && $payment_processor_id !=0) {
+      $error_message= ts("The deposit amount must be equal to or more than the total minimum deposit of %1 %2 for your selections.", array('1' => $currencySymbol, '2' => $min_total_amount));
       $form->setElementError('min_amount', $error_message);
     }
   }
