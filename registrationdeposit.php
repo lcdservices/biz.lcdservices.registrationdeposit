@@ -210,38 +210,54 @@ function registrationdeposit_civicrm_validateForm($formName, &$fields, &$files, 
   
   // Form validation for Registration fields for price option
   if ($formName == 'CRM_Event_Form_Registration_Register') {
-    $min_total_amount = 0;
-    $field_params = array(
-      'price_set_id' => CRM_Utils_Array::value('priceSetId', $fields),
-    );
-    $custom_field = civicrm_api3('PriceField', 'get', $field_params);
-    foreach($custom_field['values'] as $key=>$value){
-      $priceFieldID = 'price_'.$key;
-      if( isset( $fields[$priceFieldID] ) ){
-        $priceoptionID = CRM_Utils_Array::value($priceFieldID, $fields);
-        $fieldOptions = civicrm_api3('price_field_value', 'get', array(
-          'id' => $priceoptionID,
-          'price_field_id' => $key,
-          'sequential' => 1,
-        ));
-        if( isset($fieldOptions['values'][0]) ){
-          $priceOptionSet = $fieldOptions['values'][0];
-          $min_deposit_amount = CRM_Utils_Array::value('min_deposit', $priceOptionSet);
-          if( is_numeric($min_deposit_amount) ){
-            $min_total_amount += $min_deposit_amount;
+    if ($priceSetId = CRM_Utils_Array::value('priceSetId', $fields)) {
+      try {
+        $min_total_amount = 0;
+        $field_params = [
+          'price_set_id' => $priceSetId,
+        ];
+        $priceFields = civicrm_api3('PriceField', 'get', $field_params);
+
+        foreach ($priceFields['values'] as $key => $value) {
+          $priceFieldID = 'price_' . $key;
+          if (!empty($priceoptionID = CRM_Utils_Array::value($priceFieldID, $fields))) {
+            $fieldOptions = civicrm_api3('price_field_value', 'get', [
+              'id' => $priceoptionID,
+              'price_field_id' => $key,
+              'sequential' => 1,
+            ]);
+
+            if (!empty($priceOptionSet = $fieldOptions['values'][0])) {
+              //Civi::log()->debug('', array('priceOptionSet' => $priceOptionSet));
+              $min_deposit_amount = CRM_Utils_Array::value('min_deposit', $priceOptionSet);
+
+              //use minimum deposit if set; else use full amount;
+              if (is_numeric($min_deposit_amount)) {
+                $min_total_amount += $min_deposit_amount;
+              }
+              else {
+                $count = CRM_Utils_Array::value('count', $priceOptionSet, 1);
+                $min_total_amount += $count * $priceOptionSet['amount'];
+              }
+            }
           }
         }
       }
-    }
-    $payment_processor_id = CRM_Utils_Array::value('payment_processor_id', $fields);
-    $amount_entered = CRM_Utils_Array::value('min_amount', $fields);
-    $config = CRM_Core_Config::singleton();
-    $currencySymbol = CRM_Core_DAO::getFieldValue('CRM_Financial_DAO_Currency', $config->defaultCurrency, 'symbol', 'name');
+      catch (CiviCRM_API3_Exception $e) {}
 
-    //Civi::log()->debug('', array('min_total_maount' => $min_total_amount, 'amount_entered' => $amount_entered));
-    if ($min_total_amount > $amount_entered && $payment_processor_id !=0) {
-      $error_message= ts("The deposit amount must be equal to or more than the total minimum deposit of %1%2 for your selections.", array('1' => $currencySymbol, '2' => $min_total_amount));
-      $form->setElementError('min_amount', $error_message);
+      $payment_processor_id = CRM_Utils_Array::value('payment_processor_id', $fields);
+      $amount_entered = CRM_Utils_Array::value('min_amount', $fields);
+      $config = CRM_Core_Config::singleton();
+      $currencySymbol = CRM_Core_DAO::getFieldValue('CRM_Financial_DAO_Currency', $config->defaultCurrency, 'symbol', 'name');
+
+      //Civi::log()->debug('', array('min_total_maount' => $min_total_amount, 'amount_entered' => $amount_entered));
+      if ($min_total_amount > $amount_entered && $payment_processor_id != 0) {
+        $error_message = ts("The deposit amount must be equal to or more than the total minimum deposit of %1%2 for your selections.", [
+          '1' => $currencySymbol,
+          '2' => $min_total_amount
+        ]);
+        $form->setElementError('min_amount', $error_message);
+      }
     }
   }
   return;
