@@ -215,8 +215,6 @@ function registrationdeposit_civicrm_validateForm($formName, &$fields, &$files, 
       'price_set_id' => CRM_Utils_Array::value('priceSetId', $fields),
     );
     $custom_field = civicrm_api3('PriceField', 'get', $field_params);
-    $priceFieldID = '';
-    $priceoptionID = '';
     foreach($custom_field['values'] as $key=>$value){
       $priceFieldID = 'price_'.$key;
       if( isset( $fields[$priceFieldID] ) ){
@@ -239,9 +237,10 @@ function registrationdeposit_civicrm_validateForm($formName, &$fields, &$files, 
     $amount_entered = CRM_Utils_Array::value('min_amount', $fields);
     $config = CRM_Core_Config::singleton();
     $currencySymbol = CRM_Core_DAO::getFieldValue('CRM_Financial_DAO_Currency', $config->defaultCurrency, 'symbol', 'name');
-    
+
+    //Civi::log()->debug('', array('min_total_maount' => $min_total_amount, 'amount_entered' => $amount_entered));
     if ($min_total_amount > $amount_entered && $payment_processor_id !=0) {
-      $error_message= ts("The deposit amount must be equal to or more than the total minimum deposit of %1 %2 for your selections.", array('1' => $currencySymbol, '2' => $min_total_amount));
+      $error_message= ts("The deposit amount must be equal to or more than the total minimum deposit of %1%2 for your selections.", array('1' => $currencySymbol, '2' => $min_total_amount));
       $form->setElementError('min_amount', $error_message);
     }
   }
