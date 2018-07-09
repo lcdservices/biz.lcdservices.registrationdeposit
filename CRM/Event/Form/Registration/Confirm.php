@@ -760,6 +760,10 @@ class CRM_Event_Form_Registration_Confirm extends CRM_Event_Form_Registration {
     ) {
 
       $primaryParticipant = $this->get('primaryParticipant');
+      //LCD - hopefully in future core
+      if(!empty($primaryParticipant['min_amount']) && $primaryParticipant['min_amount'] > 0 && $primaryParticipant['amount'] > $primaryParticipant['min_amount']){
+        $primaryParticipant['amount'] = $primaryParticipant['min_amount'];
+      }
 
       if (empty($primaryParticipant['participantID'])) {
         $primaryParticipant['participantID'] = $registerByID;
