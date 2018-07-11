@@ -431,13 +431,22 @@ class CRM_Event_Form_Registration_Confirm extends CRM_Event_Form_Registration {
       }
       $this->set('params', $this->_params);
     }
-
+    
     // CRM-4320, lets build array of cancelled additional participant ids
     // those are drop or skip by primary at the time of confirmation.
     // get all in and then unset those we want to process.
     $cancelledIds = $this->_additionalParticipantIds;
 
     $params = $this->_params;
+    
+    //get minimum total amount deposited
+    $min_amount = 0;
+    foreach($params as $key=>$value){
+      if(isset($value['min_amount'])){
+        $min_amount += CRM_Utils_Array::value('min_amount', $value);
+      }
+    }
+    
     if ($this->_values['event']['is_monetary']) {
       $this->set('finalAmount', $this->_amount);
     }
@@ -618,6 +627,7 @@ class CRM_Event_Form_Registration_Confirm extends CRM_Event_Form_Registration {
           if (count($params) > 1) {
             $isAdditionalAmount = TRUE;
           }
+          $value['min_amount'] = $min_amount;
 
           //passing contribution id is already registered.
           $contribution = self::processContribution($this, $value, $result, $contactID, $pending, $isAdditionalAmount, $this->_paymentProcessor);
@@ -758,11 +768,11 @@ class CRM_Event_Form_Registration_Confirm extends CRM_Event_Form_Registration {
       !$this->_allowWaitlist && !$this->_requireApproval &&
       $this->_totalAmount > 0
     ) {
-
       $primaryParticipant = $this->get('primaryParticipant');
+      
       //LCD - hopefully in future core
-      if(!empty($primaryParticipant['min_amount']) && $primaryParticipant['min_amount'] > 0 && $primaryParticipant['amount'] > $primaryParticipant['min_amount']){
-        $primaryParticipant['amount'] = $primaryParticipant['min_amount'];
+      if( $min_amount > 0 && $primaryParticipant['amount'] > $min_amount ){
+        $primaryParticipant['amount'] = $min_amount;
       }
 
       if (empty($primaryParticipant['participantID'])) {
@@ -790,6 +800,7 @@ class CRM_Event_Form_Registration_Confirm extends CRM_Event_Form_Registration {
 
           //lets carry all participant params w/ values.
           foreach ($additionalIDs as $participantID => $contactId) {
+            
             $participantNum = NULL;
             $participantNum = $participantID;
             if ($participantID == $registerByID) {
@@ -828,7 +839,6 @@ class CRM_Event_Form_Registration_Confirm extends CRM_Event_Form_Registration {
             //existing gateway implementations
             $primaryParticipant['participants_info'][$participantID] = $params[$participantNum];
           }
-
           //get event custom field information
           $groupTree = CRM_Core_BAO_CustomGroup::getTree('Event', NULL, $this->_eventId, 0, $this->_values['event']['event_type_id']);
           $primaryParticipant['eventCustomFields'] = $groupTree;

@@ -134,10 +134,9 @@ function registrationdeposit_civicrm_buildForm($formName, &$form) {
     ));
   }
 
-  if ($formName == 'CRM_Event_Form_Registration_Register') {
-    
+  if ($formName == 'CRM_Event_Form_Registration_Register' || $formName == 'CRM_Event_Form_Registration_AdditionalParticipant') {
     $form->add('text', 'min_amount', ts('Deposit Amount'));
-    CRM_Core_Region::instance('page-body')->add(array(
+    CRM_Core_Region::instance('price-set-1')->add(array(
       'template' => "CRM/LCD/registerdeposit.tpl"
     ));
   }
@@ -150,7 +149,7 @@ function registrationdeposit_civicrm_buildForm($formName, &$form) {
     
     foreach($params as $key=>$value){
       if(isset($value['min_amount'])){
-        $min_amount = CRM_Utils_Array::value('min_amount', $value);
+        $min_amount += CRM_Utils_Array::value('min_amount', $value);
       }
     }
 
@@ -209,7 +208,7 @@ function registrationdeposit_civicrm_validateForm($formName, &$fields, &$files, 
   }
   
   // Form validation for Registration fields for price option
-  if ($formName == 'CRM_Event_Form_Registration_Register') {
+  if ($formName == 'CRM_Event_Form_Registration_Register' || $formName == 'CRM_Event_Form_Registration_AdditionalParticipant') {
     if ($priceSetId = CRM_Utils_Array::value('priceSetId', $fields)) {
       try {
         $min_total_amount = 0;
@@ -251,7 +250,7 @@ function registrationdeposit_civicrm_validateForm($formName, &$fields, &$files, 
       $currencySymbol = CRM_Core_DAO::getFieldValue('CRM_Financial_DAO_Currency', $config->defaultCurrency, 'symbol', 'name');
 
       //Civi::log()->debug('', array('min_total_maount' => $min_total_amount, 'amount_entered' => $amount_entered));
-      if ($min_total_amount > $amount_entered && $payment_processor_id != 0) {
+      if ( !empty($amount_entered) && $min_total_amount > $amount_entered) {
         $error_message = ts("The deposit amount must be equal to or more than the total minimum deposit of %1%2 for your selections.", [
           '1' => $currencySymbol,
           '2' => $min_total_amount
