@@ -134,11 +134,26 @@ function registrationdeposit_civicrm_buildForm($formName, &$form) {
     ));
   }
 
-  if ($formName == 'CRM_Event_Form_Registration_Register' || $formName == 'CRM_Event_Form_Registration_AdditionalParticipant') {
+  if ($formName == 'CRM_Event_Form_Registration_Register') {
     $form->add('text', 'min_amount', ts('Deposit Amount'));
     CRM_Core_Region::instance('price-set-1')->add(array(
       'template' => "CRM/LCD/registerdeposit.tpl"
     ));
+  }
+  if ($formName == 'CRM_Event_Form_Registration_AdditionalParticipant') {
+    $params = $form->getVar('_params');
+    $payment_processor_id = 0;
+    foreach($params as $key=>$value){
+      if(isset($value['payment_processor_id'])){
+        $payment_processor_id = CRM_Utils_Array::value('payment_processor_id', $value);
+      }
+    }
+    if($payment_processor_id > 0){
+      $form->add('text', 'min_amount', ts('Deposit Amount'));
+      CRM_Core_Region::instance('price-set-1')->add(array(
+        'template' => "CRM/LCD/participantregisterdeposit.tpl"
+      ));
+    }    
   }
 
   if ($formName == 'CRM_Event_Form_Registration_Confirm' ||
