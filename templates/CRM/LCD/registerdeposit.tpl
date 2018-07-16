@@ -9,10 +9,11 @@
 {literal}
 <script type="text/javascript">
   CRM.$(function($) {
+    var defaultPaymentprocessorID = {/literal}{$defaultPaymentprocessorID}{literal};
     $('#deposit-block').insertAfter('#pricesetTotal');
     $('#priceset .crm-section').css({'min-height': '50px'});
     var paymentID = $('input[name="payment_processor_id"]:checked').attr('value');
-    if(paymentID > 0){
+    if(defaultPaymentprocessorID> 0){
       $('#deposit-block').show();
     }
     else{
