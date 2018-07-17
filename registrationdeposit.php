@@ -135,12 +135,22 @@ function registrationdeposit_civicrm_buildForm($formName, &$form) {
   }
 
   if ($formName == 'CRM_Event_Form_Registration_Register') {
-    $paymentprocessorID = $form->getVar('_paymentProcessorID');
-    $form->assign('defaultPaymentprocessorID', $paymentprocessorID);
-    $form->add('text', 'min_amount', ts('Deposit Amount'));
-    CRM_Core_Region::instance('price-set-1')->add(array(
-      'template' => "CRM/LCD/registerdeposit.tpl"
-    ));
+    $min_deposit = 0;
+    $fee_blocks = $form->_values['fee'];
+    foreach( $fee_blocks as $fee_block) {
+      $feeOption = $fee_block['options'];
+      foreach( $feeOption as $fee){
+         $min_deposit += CRM_Utils_Array::value('min_deposit', $fee);
+      }
+    }
+    if($min_deposit > 0 ) {
+      $paymentprocessorID = $form->getVar('_paymentProcessorID');
+      $form->assign('defaultPaymentprocessorID', $paymentprocessorID);
+      $form->add('text', 'min_amount', ts('Deposit Amount'));
+      CRM_Core_Region::instance('price-set-1')->add(array(
+        'template' => "CRM/LCD/registerdeposit.tpl"
+      ));
+    }
   }
   if ($formName == 'CRM_Event_Form_Registration_AdditionalParticipant') {
     $params = $form->getVar('_params');
@@ -150,7 +160,15 @@ function registrationdeposit_civicrm_buildForm($formName, &$form) {
         $payment_processor_id = CRM_Utils_Array::value('payment_processor_id', $value);
       }
     }
-    if($payment_processor_id > 0){
+    $min_deposit = 0;
+    $fee_blocks = $form->_values['fee'];
+    foreach( $fee_blocks as $fee_block) {
+      $feeOption = $fee_block['options'];
+      foreach( $feeOption as $fee){
+         $min_deposit += CRM_Utils_Array::value('min_deposit', $fee);
+      }
+    }
+    if($payment_processor_id > 0 && $min_deposit > 0){
       $form->add('text', 'min_amount', ts('Deposit Amount'));
       CRM_Core_Region::instance('price-set-1')->add(array(
         'template' => "CRM/LCD/participantregisterdeposit.tpl"
@@ -169,7 +187,6 @@ function registrationdeposit_civicrm_buildForm($formName, &$form) {
         $min_amount += CRM_Utils_Array::value('min_amount', $value);
       }
     }
-
     if($min_amount > 0){
       $amountformat = CRM_Utils_Money::format($min_amount);
       $form->assign('min_amount', $amountformat);
@@ -315,5 +332,15 @@ function registrationdeposit_civicrm_postProcess($formName, &$form) {
         $fieldValue->save();
       }
     }          
+  }
+  
+  if ($formName == 'CRM_Event_Form_Registration_Confirm') {
+    $params = $form->_values['params'];
+  }
+}
+
+function registrationdeposit_civicrm_alterPaymentProcessorParams($paymentObj,  &$rawParams,  &$cookedParams) {  
+  if( $cookedParams['min_amount'] ){
+    $cookedParams['amount'] = $cookedParams['min_amount'];
   }
 }

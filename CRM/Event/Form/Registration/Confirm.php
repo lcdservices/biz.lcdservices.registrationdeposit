@@ -771,9 +771,9 @@ class CRM_Event_Form_Registration_Confirm extends CRM_Event_Form_Registration {
       $primaryParticipant = $this->get('primaryParticipant');
       
       //LCD - hopefully in future core
-      if( $min_amount > 0 && $primaryParticipant['amount'] > $min_amount ){
-        $primaryParticipant['amount'] = $min_amount;
-      }
+      // if( $min_amount > 0 && $primaryParticipant['amount'] > $min_amount ){
+        // $primaryParticipant['amount'] = $min_amount;
+      // }
 
       if (empty($primaryParticipant['participantID'])) {
         $primaryParticipant['participantID'] = $registerByID;
@@ -1006,10 +1006,10 @@ class CRM_Event_Form_Registration_Confirm extends CRM_Event_Form_Registration {
     );
 
     //LCD - hopefully in future core
-    if(!empty($params['min_amount']) && $params['min_amount'] > 0 && $params['amount'] > $params['min_amount']){
-      $contribParams['partial_payment_total'] = $params['amount'];
-      $contribParams['partial_amount_to_pay'] = $params['min_amount'];
-    }
+    // if(!empty($params['min_amount']) && $params['min_amount'] > 0 && $params['amount'] > $params['min_amount']){
+      // $contribParams['partial_payment_total'] = $params['amount'];
+      // $contribParams['partial_amount_to_pay'] = $params['min_amount'];
+    // }
 
     if ($paymentProcessor) {
       $contribParams['payment_instrument_id'] = $paymentProcessor['payment_instrument_id'];
