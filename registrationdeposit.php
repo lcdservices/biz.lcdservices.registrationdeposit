@@ -297,44 +297,13 @@ function registrationdeposit_civicrm_validateForm($formName, &$fields, &$files, 
 }
 
 /**
- * Implements hook_civicrm_postProcess().
+ * Implements hook_civicrm_preProcess().
  *
  * @param string $formName
  * @param CRM_Core_Form $form
  */
-function registrationdeposit_civicrm_postProcess($formName, &$form) {
-  if ($formName == 'CRM_Price_Form_Field' &&
-    ($form->getAction() == CRM_Core_Action::ADD || $form->getAction() == CRM_Core_Action::UPDATE)
-  ) {
-    $params = $form->getVar('_submitValues');    
-    $id = $form->getVar('_sid');
-    $field_params = array(
-      'price_set_id' => $id,
-    );
-    $custom_field = civicrm_api3('PriceField', 'get', $field_params);
-    foreach($custom_field['values'] as $key=>$value){
-      $priceFieldID = $key;
-    }
-
-    $fieldOptions = civicrm_api3('price_field_value', 'get', array(
-      'price_field_id' => $priceFieldID,
-      'sequential' => 1,
-    ));
-
-    if(isset($fieldOptions['values']) ){
-      foreach ($fieldOptions['values'] as $key => $value) {
-        $option_label = $value['label'];
-        $option_key = array_search($option_label, $params['option_label']);
-        $option_deposit = CRM_Utils_Array::value($option_key, $params['min_deposit'], FALSE);
-        $fieldValue = new CRM_Price_DAO_PriceFieldValue();
-        $fieldValue->min_deposit = $option_deposit;
-        $fieldValue->id = $value['id'];
-        $fieldValue->save();
-      }
-    }          
-  }
-  
-  if ($formName == 'CRM_Event_Form_Registration_Confirm') {
+function registrationdeposit_civicrm_preProcess($formName, &$form) {
+  if ($formName == 'CRM_Event_Form_Registration_ThankYou') {
     $params = $form->getVar('_params');
     $contribution_id = CRM_Utils_Array::value('contributionID', $params);
     $payment_processor_id = CRM_Utils_Array::value('payment_processor_id', $params);
@@ -374,9 +343,47 @@ function registrationdeposit_civicrm_postProcess($formName, &$form) {
     $createdPayment = civicrm_api3('FinancialTrxn', 'create', $paymentParams);
   }
 }
+/**
+ * Implements hook_civicrm_postProcess().
+ *
+ * @param string $formName
+ * @param CRM_Core_Form $form
+ */
+function registrationdeposit_civicrm_postProcess($formName, &$form) {
+  if ($formName == 'CRM_Price_Form_Field' &&
+    ($form->getAction() == CRM_Core_Action::ADD || $form->getAction() == CRM_Core_Action::UPDATE)
+  ) {
+    $params = $form->getVar('_submitValues');    
+    $id = $form->getVar('_sid');
+    $field_params = array(
+      'price_set_id' => $id,
+    );
+    $custom_field = civicrm_api3('PriceField', 'get', $field_params);
+    foreach($custom_field['values'] as $key=>$value){
+      $priceFieldID = $key;
+    }
 
-function registrationdeposit_civicrm_alterPaymentProcessorParams($paymentObj,  &$rawParams,  &$cookedParams) {  
-  if( $cookedParams['min_amount'] ){
-    $cookedParams['amount'] = $cookedParams['min_amount'];
+    $fieldOptions = civicrm_api3('price_field_value', 'get', array(
+      'price_field_id' => $priceFieldID,
+      'sequential' => 1,
+    ));
+
+    if(isset($fieldOptions['values']) ){
+      foreach ($fieldOptions['values'] as $key => $value) {
+        $option_label = $value['label'];
+        $option_key = array_search($option_label, $params['option_label']);
+        $option_deposit = CRM_Utils_Array::value($option_key, $params['min_deposit'], FALSE);
+        $fieldValue = new CRM_Price_DAO_PriceFieldValue();
+        $fieldValue->min_deposit = $option_deposit;
+        $fieldValue->id = $value['id'];
+        $fieldValue->save();
+      }
+    }          
+  }
+}
+
+function registrationdeposit_civicrm_alterPaymentProcessorParams($paymentObj,  &$rawParams,  &$cookedParams) {
+  if( $rawParams['min_amount'] ){
+    $cookedParams['amount'] = $rawParams['min_amount'];
   }
 }
