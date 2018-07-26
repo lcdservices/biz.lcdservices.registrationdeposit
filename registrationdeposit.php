@@ -198,7 +198,7 @@ function registrationdeposit_civicrm_buildForm($formName, &$form) {
   if ($formName == 'CRM_Event_Form_Participant') {
     $form->add('text', 'min_amount', ts('Deposit Amount'));
     CRM_Core_Region::instance('price-set-1')->add(array(
-      'template' => "CRM/LCD/registerdeposit.tpl"
+      'template' => "CRM/LCD/participantdeposit.tpl"
     ));
   }
 }
