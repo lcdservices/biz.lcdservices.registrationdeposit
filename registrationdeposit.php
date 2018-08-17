@@ -340,16 +340,20 @@ function registrationdeposit_civicrm_postProcess($formName, &$form) {
   }
   
   if ($formName == 'CRM_Event_Form_Registration_Confirm') {
+    Civi::log()->debug('', array('action' => $form->getAction()));
     $params = $form->getVar('_params');
     $contribution_id = CRM_Utils_Array::value('contributionID', $params);
+
     return _registrationdeposit_civicrm_updatePartialPayment($contribution_id, $params);
   }
+
   if ($formName == 'CRM_Event_Form_Participant') {
     $params = $form->getVar('_params');
     $participantID = $form->getVar('_id');
     $contributionId = CRM_Core_DAO::getFieldValue('CRM_Event_DAO_ParticipantPayment',
-           $participantID, 'contribution_id', 'participant_id'
-         );
+      $participantID, 'contribution_id', 'participant_id'
+    );
+
     return _registrationdeposit_civicrm_updatePartialPayment($contributionId, $params);
   }
 }
@@ -362,12 +366,13 @@ function registrationdeposit_civicrm_postProcess($formName, &$form) {
 function _registrationdeposit_civicrm_updatePartialPayment($contribID, $params){
   $payment = civicrm_api3('Payment', 'get', array('contribution_id' => $contribID));
   $paymentParams = array();
-  if( !empty($payment['values'] ) ){
+  if (!empty($payment['values'])) {
     //Change contribution status
     $status = CRM_Core_PseudoConstant::getKey('CRM_Contribute_DAO_Contribution', 'contribution_status_id', 'Partially paid');
     $total_amount = CRM_Utils_Array::value('amount', $params);
     $min_amount = CRM_Utils_Array::value('min_amount', $params);
-    if( $min_amount && $total_amount > $min_amount) {
+
+    if ($min_amount && $total_amount > $min_amount) {
       $contribParams = array(
         'total_amount' => $total_amount,
         'partial_payment_total' => $total_amount,
@@ -379,6 +384,10 @@ function _registrationdeposit_civicrm_updatePartialPayment($contribID, $params){
       $contribution->id = $contribID;
       $result = $contribution->save();
     }
+    else {
+      $min_amount = $total_amount;
+    }
+
     //update financial trxn with partial payment to is_payment=0
     $paymentID = CRM_Utils_Array::value('id', $payment);
     $payment_params = $payment['values'][$paymentID];
@@ -390,7 +399,7 @@ function _registrationdeposit_civicrm_updatePartialPayment($contribID, $params){
     $paymentParams['fee_amount'] = 0;
     $paymentParams['is_payment'] = 0;
     
-    try{
+    try {
       $updatedPayment = civicrm_api3('FinancialTrxn', 'create', $paymentParams);
     }
     catch (CiviCRM_API3_Exception $e) {
@@ -410,7 +419,8 @@ function _registrationdeposit_civicrm_updatePartialPayment($contribID, $params){
     unset($paymentParams['id']);
     $paymentParams['total_amount'] = $min_amount;
     $paymentParams['is_payment'] = 1;
-     try{
+
+    try {
       $createdPayment = civicrm_api3('FinancialTrxn', 'create', $paymentParams);
     }
     catch (CiviCRM_API3_Exception $e) {
@@ -434,7 +444,7 @@ function _registrationdeposit_civicrm_updatePartialPayment($contribID, $params){
  * @param $rawParams
  */
 function registrationdeposit_civicrm_alterPaymentProcessorParams($paymentObj,  &$rawParams,  &$cookedParams) {
-  if( $rawParams['min_amount'] ){
+  if ($rawParams['min_amount']) {
     $cookedParams['amount'] = $rawParams['min_amount'];
   }
 }
