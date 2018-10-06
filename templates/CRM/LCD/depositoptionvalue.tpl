@@ -11,7 +11,7 @@
     </script>
 {/literal}
 {/section}
-
+ 
 {literal}
 <script type="text/javascript">
  cj("<th class='min_deposit'>{/literal} {ts}Minimum Deposit{/ts}{literal}</th>").insertAfter('#optionField tbody tr th:last');

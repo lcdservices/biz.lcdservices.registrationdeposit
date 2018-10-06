@@ -100,6 +100,23 @@ function registrationdeposit_civicrm_entityTypes(&$entityTypes) {
           'type' => 'Text',
         ],
       );
+      $fields['min_deposit_text'] = array(
+        'name' => 'min_deposit',
+        'type' => CRM_Utils_Type::T_MONEY,
+        'title' => ts('Minimum deposit'),
+        'description' => 'Minimum deposit for option amount',
+        'precision' => [
+          18,
+          9
+        ],
+        'table_name' => 'civicrm_price_field_value',
+        'entity' => 'PriceFieldValue',
+        'bao' => 'CRM_Price_BAO_PriceFieldValue',
+        'localizable' => 0,
+        'html' => [
+          'type' => 'Text',
+        ],
+      );
     };
 }
 
@@ -113,16 +130,20 @@ function registrationdeposit_civicrm_buildForm($formName, &$form) {
   if ($formName == 'CRM_Price_Form_Field' &&
     ($form->getAction() == CRM_Core_Action::ADD || $form->getAction() == CRM_Core_Action::UPDATE)
   ) {
+    $form->add('text', "min_deposit_text", ts('Minimum deposit'));
+    
     $numoption = CRM_Price_Form_Field::NUM_OPTION;
     for ($i = 1; $i <= $numoption; $i++) {     
       $form->add('text', "min_deposit[$i]", ts('Minimum deposit'));
     }
-
     if($form->getAction() == CRM_Core_Action::ADD){
       CRM_Core_Region::instance('page-body')->add(array(
         'template' => "CRM/LCD/depositoptionvalue.tpl"
       )); 
     }
+    CRM_Core_Region::instance('page-body')->add(array(
+      'template' => "CRM/LCD/depositfieldvalue.tpl"
+    ));
   }
 
   if ($formName == 'CRM_Price_Form_Option' &&
@@ -137,10 +158,12 @@ function registrationdeposit_civicrm_buildForm($formName, &$form) {
   if ($formName == 'CRM_Event_Form_Registration_Register') {
     $min_deposit = 0;
     $fee_blocks = $form->_values['fee'];
-    foreach( $fee_blocks as $fee_block) {
+    foreach( $fee_blocks as $feeID=>$fee_block) {
+      $html_type = CRM_Utils_Array::value('html_type', $fee_block);
+      
       $feeOption = $fee_block['options'];
       foreach( $feeOption as $fee){
-         $min_deposit += CRM_Utils_Array::value('min_deposit', $fee);
+        $min_deposit += CRM_Utils_Array::value('min_deposit', $fee);
       }
     }
     if($min_deposit > 0 ) {
@@ -217,19 +240,28 @@ function registrationdeposit_civicrm_validateForm($formName, &$fields, &$files, 
 
   // Form validation for Price Form Field
   if ($formName == 'CRM_Price_Form_Field' && $form->getAction() == CRM_Core_Action::ADD) {
-    $numoption = CRM_Price_Form_Field::NUM_OPTION;
-      
-    for ($i = 1; $i <= $numoption; $i++) { 
-      $min_deposit = CRM_Utils_Array::value($i, $fields['min_deposit']);
-      $option_amount = CRM_Utils_Array::value($i, $fields['option_amount']);
-      $min_depositID = "option_amount[$i]";
-      if($min_deposit > $option_amount){
-        $error_message= ts("Cannot create price option because minimum deposit is greater than amount.", array(
-          '1' => $min_depositID,
-        ));
-        $form->setElementError($min_depositID, $error_message);
+    if( isset($fields['price']) && !empty($fields['price']) ){
+      $min_deposit = $fields['min_deposit_text'];
+      $amount = $fields['price'];
+      if($min_deposit > $amount){
+        $error_message= ts("Cannot create price field because minimum deposit is greater than amount.");
+        $form->setElementError('min_deposit_text', $error_message);
       }
-    }        
+    }
+    else {
+      $numoption = CRM_Price_Form_Field::NUM_OPTION;
+      for ($i = 1; $i <= $numoption; $i++) { 
+        $min_deposit = CRM_Utils_Array::value($i, $fields['min_deposit']);
+        $option_amount = CRM_Utils_Array::value($i, $fields['option_amount']);
+        $min_depositID = "option_amount[$i]";
+        if($min_deposit > $option_amount){
+          $error_message= ts("Cannot create price option because minimum deposit is greater than amount.", array(
+            '1' => $min_depositID,
+          ));
+          $form->setElementError($min_depositID, $error_message);
+        }
+      }   
+    }
   }
 
   // Form validation for Price fields for a option Data Set
@@ -256,30 +288,58 @@ function registrationdeposit_civicrm_validateForm($formName, &$fields, &$files, 
           'price_set_id' => $priceSetId,
         ];
         $priceFields = civicrm_api3('PriceField', 'get', $field_params);
-
         foreach ($priceFields['values'] as $key => $value) {
-          $priceFieldID = 'price_' . $key;
-          if (!empty($priceoptionID = CRM_Utils_Array::value($priceFieldID, $fields))) {
+           $PriceField = civicrm_api3('PriceField', 'get', array(
+            'price_field_id' => $key,
+            'sequential' => 1,
+          ));
+          $type = '';
+          if (!empty($PriceFieldOption = $PriceField['values'][0] )) {
+            
+            $type = CRM_Utils_Array::value('html_type', $PriceFieldOption);
+          }
+          if($type == 'Text'){
+            $priceFieldID = 'price_' . $key;
+            $quantity = CRM_Utils_Array::value($priceFieldID, $fields);
+            $min_total_amount = '';
             $fieldOptions = civicrm_api3('price_field_value', 'get', [
-              'id' => $priceoptionID,
-              'price_field_id' => $key,
-              'sequential' => 1,
-            ]);
-
-            if (!empty($priceOptionSet = $fieldOptions['values'][0])) {
-              //Civi::log()->debug('', array('priceOptionSet' => $priceOptionSet));
-              $min_deposit_amount = CRM_Utils_Array::value('min_deposit', $priceOptionSet);
-
-              //use minimum deposit if set; else use full amount;
-              if (is_numeric($min_deposit_amount)) {
-                $min_total_amount += $min_deposit_amount;
+                'price_field_id' => $key,
+                'sequential' => 1,
+              ]);
+              if (!empty($priceOptionSet = $fieldOptions['values'][0])) {
+                $min_deposit_amount = CRM_Utils_Array::value('min_deposit', $priceOptionSet);
+                //use minimum deposit if set; else use full amount;
+                if ( $min_deposit_amount ) {
+                  $totalAmount = $quantity * $min_deposit_amount;
+                  $min_total_amount += $totalAmount;
+                  
+                }
               }
-              else {
-                $count = CRM_Utils_Array::value('count', $priceOptionSet, 1);
-                $min_total_amount += $count * $priceOptionSet['amount'];
+          }
+          else{
+            $priceFieldID = 'price_' . $key;
+            if (!empty($priceoptionID = CRM_Utils_Array::value($priceFieldID, $fields))) {
+              $fieldOptions = civicrm_api3('price_field_value', 'get', [
+                'id' => $priceoptionID,
+                'price_field_id' => $key,
+                'sequential' => 1,
+              ]);
+
+              if (!empty($priceOptionSet = $fieldOptions['values'][0])) {
+                //Civi::log()->debug('', array('priceOptionSet' => $priceOptionSet));
+                $min_deposit_amount = CRM_Utils_Array::value('min_deposit', $priceOptionSet);
+
+                //use minimum deposit if set; else use full amount;
+                if (is_numeric($min_deposit_amount)) {
+                  $min_total_amount += $min_deposit_amount;
+                }
+                else {
+                  $count = CRM_Utils_Array::value('count', $priceOptionSet, 1);
+                  $min_total_amount += $count * $priceOptionSet['amount'];
+                }
               }
             }
-          }
+          } 
         }
       }
       catch (CiviCRM_API3_Exception $e) {}
@@ -308,35 +368,50 @@ function registrationdeposit_civicrm_validateForm($formName, &$fields, &$files, 
  * @param CRM_Core_Form $form
  */
 function registrationdeposit_civicrm_postProcess($formName, &$form) {
-  if ($formName == 'CRM_Price_Form_Field' &&
-    ($form->getAction() == CRM_Core_Action::ADD || $form->getAction() == CRM_Core_Action::UPDATE)
-  ) {
-    $params = $form->getVar('_submitValues');    
-    $id = $form->getVar('_sid');
-    $field_params = array(
-      'price_set_id' => $id,
-    );
-    $custom_field = civicrm_api3('PriceField', 'get', $field_params);
-    foreach($custom_field['values'] as $key=>$value){
-      $priceFieldID = $key;
+  if ($formName == 'CRM_Price_Form_Field') {
+    $params = $form->getVar('_submitValues');
+    if($form->getAction() == CRM_Core_Action::ADD){
+      $id = $form->getVar('_sid');
+      $field_params = array(
+        'price_set_id' => $id,
+      );
+      $custom_field = civicrm_api3('PriceField', 'get', $field_params);
+      foreach($custom_field['values'] as $key=>$value){
+        $priceFieldID = $key;
+      }
     }
-
+    else if($form->getAction() == CRM_Core_Action::UPDATE) {
+      $priceFieldID = $form->getVar('_fid');
+    }
+    
     $fieldOptions = civicrm_api3('price_field_value', 'get', array(
       'price_field_id' => $priceFieldID,
       'sequential' => 1,
     ));
-
-    if(isset($fieldOptions['values']) ){
-      foreach ($fieldOptions['values'] as $key => $value) {
-        $option_label = $value['label'];
-        $option_key = array_search($option_label, $params['option_label']);
-        $option_deposit = CRM_Utils_Array::value($option_key, $params['min_deposit'], FALSE);
-        $fieldValue = new CRM_Price_DAO_PriceFieldValue();
-        $fieldValue->min_deposit = $option_deposit;
-        $fieldValue->id = $value['id'];
-        $fieldValue->save();
+    if( isset($params['price']) && !empty($params['price']) ){
+      $min_deposit = $params['min_deposit_text'];
+      if(isset($fieldOptions['values']) ){
+        foreach ($fieldOptions['values'] as $key => $value) {
+          $fieldValue = new CRM_Price_DAO_PriceFieldValue();
+          $fieldValue->min_deposit = $min_deposit;
+          $fieldValue->id = $value['id'];
+          $fieldValue->save();
+        }
       }
-    }          
+    }
+    else {
+      if(isset($fieldOptions['values']) ){
+        foreach ($fieldOptions['values'] as $key => $value) {
+          $option_label = $value['label'];
+          $option_key = array_search($option_label, $params['option_label']);
+          $option_deposit = CRM_Utils_Array::value($option_key, $params['min_deposit'], FALSE);
+          $fieldValue = new CRM_Price_DAO_PriceFieldValue();
+          $fieldValue->min_deposit = $option_deposit;
+          $fieldValue->id = $value['id'];
+          $fieldValue->save();
+        }
+      }  
+    }
   }
   
   if ($formName == 'CRM_Event_Form_Registration_Confirm') {
