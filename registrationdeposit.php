@@ -518,8 +518,15 @@ function _registrationdeposit_civicrm_updatePartialPayment($contribID, $params){
  * @param $paymentObj
  * @param $rawParams
  */
-function registrationdeposit_civicrm_alterPaymentProcessorParams($paymentObj,  &$rawParams,  &$cookedParams) {
-  if ($rawParams['min_amount']) {
-    $cookedParams['amount'] = $rawParams['min_amount'];
+function registrationdeposit_civicrm_alterPaymentProcessorParams($paymentObj,  &$rawParams, &$cookedParams) {
+  /*Civi::log()->debug('registrationdeposit_civicrm_alterPaymentProcessorParams', [
+    '$paymentObj' => $paymentObj,
+    '$rawParams' => $rawParams,
+    '$cookedParams' => $cookedParams,
+  ]);*/
+
+  //note: cookedParams key is A.net specific...
+  if (!empty($rawParams['min_amount'])) {
+    $cookedParams['x_amount'] = $rawParams['min_amount'];
   }
 }
