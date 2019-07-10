@@ -204,10 +204,10 @@ function registrationdeposit_civicrm_buildForm($formName, &$form) {
   ) {
     $params = $form->getVar('_params');
     $min_amount = 0;
-    
-    foreach($params as $key=>$value){
-      if(isset($value['min_amount'])){
-        $min_amount += CRM_Utils_Array::value('min_amount', $value);
+
+    foreach ($params as $key => $value){
+      if ($valMinAmt = CRM_Utils_Array::value('min_amount', $value)) {
+        $min_amount += $valMinAmt;
       }
     }
     if($min_amount > 0){
@@ -236,7 +236,11 @@ function registrationdeposit_civicrm_buildForm($formName, &$form) {
  * @param array $errors
  */
 function registrationdeposit_civicrm_validateForm($formName, &$fields, &$files, &$form, &$errors) {
-  //Civi::log()->debug('registrationdeposit_civicrm_validateForm', array('fields' => $fields));
+  /*Civi::log()->debug('registrationdeposit_civicrm_validateForm', [
+    '$fields' => $fields,
+    '$form' => $form,
+    '$errors' => $errors,
+  ]);*/
 
   // Form validation for Price Form Field
   if ($formName == 'CRM_Price_Form_Field' && $form->getAction() == CRM_Core_Action::ADD) {
@@ -284,8 +288,9 @@ function registrationdeposit_civicrm_validateForm($formName, &$fields, &$files, 
     $formName == 'CRM_Event_Form_Registration_AdditionalParticipant'
   ) {
     if ($priceSetId = CRM_Utils_Array::value('priceSetId', $fields)) {
+      $min_total_amount = 0;
+
       try {
-        $min_total_amount = 0;
         $priceFields = civicrm_api3('PriceField', 'get', ['price_set_id' => $priceSetId]);
         //Civi::log()->debug('validateForm', ['$priceFields' => $priceFields]);
 
@@ -338,7 +343,6 @@ function registrationdeposit_civicrm_validateForm($formName, &$fields, &$files, 
       }
       catch (CiviCRM_API3_Exception $e) {}
 
-      $payment_processor_id = CRM_Utils_Array::value('payment_processor_id', $fields);
       $amount_entered = CRM_Utils_Array::value('min_amount', $fields);
       $config = CRM_Core_Config::singleton();
       $currencySymbol = CRM_Core_DAO::getFieldValue('CRM_Financial_DAO_Currency', $config->defaultCurrency, 'symbol', 'name');
@@ -353,7 +357,6 @@ function registrationdeposit_civicrm_validateForm($formName, &$fields, &$files, 
       }
     }
   }
-  return;
 }
 /**
  * Implements hook_civicrm_postProcess().
