@@ -237,9 +237,10 @@ function registrationdeposit_civicrm_buildForm($formName, &$form) {
  */
 function registrationdeposit_civicrm_validateForm($formName, &$fields, &$files, &$form, &$errors) {
   /*Civi::log()->debug('registrationdeposit_civicrm_validateForm', [
+    '$formName' => $formName,
     '$fields' => $fields,
-    '$form' => $form,
-    '$errors' => $errors,
+    //'$form' => $form,
+    //'$errors' => $errors,
   ]);*/
 
   // Form validation for Price Form Field
@@ -329,7 +330,7 @@ function registrationdeposit_civicrm_validateForm($formName, &$fields, &$files, 
                 $min_deposit_amount = CRM_Utils_Array::value('min_deposit', $fieldOptions);
 
                 //use minimum deposit if set; else use full amount;
-                if (is_numeric($min_deposit_amount) && $min_deposit_amount > 0) {
+                if (is_numeric($min_deposit_amount)) {
                   $min_total_amount += $min_deposit_amount;
                 }
                 else {
